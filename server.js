@@ -58,4 +58,5 @@ app.post('/api/generate', async (request, reply) => {
 });
 
 app.get('/', async (_, reply) => reply.sendFile('index.html'));
-app.listen({ port: Number(process.env.PORT || 4173), host: '127.0.0.1' }).then(() => console.log('Image panel: http://127.0.0.1:4173'));
+const port = Number(process.env.PORT || 4173);
+app.listen({ port, host: '0.0.0.0' }).then(() => console.log(`Image panel listening on port ${port}`));
