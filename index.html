@@ -5,7 +5,7 @@
 <label>润色 API Key <input id="refineKey" type="password" placeholder="已配置，可留空" autocomplete="off"></label>
 <label>生图 API Key <input id="imageKey" type="password" placeholder="已配置，可留空" autocomplete="off"></label>
 <label>原始提示词 <textarea id="prompt" rows="5" placeholder="例如：一只戴宇航员头盔的橘猫贴纸"></textarea></label>
-<label class="upload">参考图 <input id="reference" type="file" accept="image/png,image/jpeg,image/webp,image/mpo,.mpo"><span id="fileName">未选择文件</span></label>
+<label class="upload">参考图 <input id="reference" type="file" accept="image/png,image/jpeg,image/webp,image/mpo,.mpo"><span id="fileName">未选择文件</span></label><div id="referencePreviewWrap" class="referencePreviewWrap hidden"><img id="referencePreview" class="referencePreview" alt="参考图预览"></div>
 <div class="row"><label>模型<select id="model"><option value="gpt-image-2.5-sunburst">gpt-image-2.5-sunburst</option></select></label><label>比例与清晰度<select id="size"><option value="1024x1024">1:1 正方形（1K · 1024 × 1024）</option><option value="1536x1024">3:2 横向（1K · 1536 × 1024）</option><option value="1024x1536">2:3 纵向（1K · 1024 × 1536）</option><option value="2048x2048">1:1 正方形（2K · 2048 × 2048）</option><option value="4096x4096">1:1 正方形（4K · 4096 × 4096）</option></select></label></div>
 <label>生成数量<select id="quantity"><option value="1">1 张</option><option value="2">2 张</option><option value="4">4 张</option></select></label>
 <div class="actions"><button id="refine" class="secondary">✦ 润色提示词</button><button id="generate" class="primary">生成图片 <span>→</span></button></div><p id="message" class="message"></p></aside>
