@@ -52,6 +52,20 @@ async function compressReference(source) {
   return best;
 }
 
+async function convertWebpToPng(source) {
+  let best;
+  for (const maxDimension of referenceMaxDimensions) {
+    const output = await sharp(source, { page: 0 })
+      .rotate()
+      .resize({ width: maxDimension, height: maxDimension, fit: 'inside', withoutEnlargement: true })
+      .png({ compressionLevel: 9, adaptiveFiltering: true, effort: 10 })
+      .toBuffer();
+    best = output;
+    if (output.length <= referenceMaxBytes) return output;
+  }
+  return best;
+}
+
 app.get('/api/health', async () => ({ ok: true }));
 
 app.post('/api/refine', async (request, reply) => {
@@ -87,8 +101,9 @@ app.post('/api/generate', async (request, reply) => {
     try {
       let source = image.buffer;
       try {
-        const compressed = await compressReference(source);
-        images[index] = { ...image, buffer: compressed, filename: `reference-${index + 1}.jpg`, mimetype: 'image/jpeg' };
+        const isWebp = String(image.mimetype || '').toLowerCase() === 'image/webp' || /\.webp$/i.test(filename);
+        const converted = isWebp ? await convertWebpToPng(source) : await compressReference(source);
+        images[index] = { ...image, buffer: converted, filename: `reference-${index + 1}.${isWebp ? 'png' : 'jpg'}`, mimetype: isWebp ? 'image/png' : 'image/jpeg' };
       } catch (directError) {
         const firstFrame = extractFirstJpeg(source);
         if (!firstFrame) throw directError;
@@ -113,7 +128,7 @@ app.post('/api/generate', async (request, reply) => {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: image
+      headers: images.length
         ? { Authorization: `Bearer ${apiKey}` }
         : { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: images.length ? form : JSON.stringify({ model, prompt, n: 1, size: String(fields.size || '1024x1024') })
