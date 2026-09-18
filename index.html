@@ -10,4 +10,5 @@
 <label>生成数量<select id="quantity"><option value="1">1 张</option><option value="2">2 张</option><option value="4">4 张</option></select></label>
 <div class="actions"><button id="refine" class="secondary">✦ 润色提示词</button><button id="generate" class="primary">生成图片 <span>→</span></button></div><p id="message" class="message"></p></aside>
 <section class="panel result"><div class="step"><span>02</span><div><h2>生成队列</h2><p id="queueSummary">0 个任务</p></div><button id="clearQueue" class="queueClear" type="button">清空已完成</button></div><div id="queueList" class="queueList"><p class="queueEmpty">暂无任务</p></div></section></section>
+<div id="previewModal" class="previewModal hidden" role="dialog" aria-modal="true" aria-label="图片预览"><div class="previewDialog"><button id="closePreview" class="previewClose" type="button" aria-label="关闭预览">×</button><img id="previewImage" alt="生成图片预览"><div class="previewFooter"><span id="previewPrompt"></span><a id="previewDownload" class="download" download="generated-image.png">下载图片 ↓</a></div></div></div>
 <footer>API 请求通过本机代理发送，密钥不会写入文件。</footer></main><script src="/app.js"></script></body></html>
