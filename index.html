@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Image Prompt Studio</title><link rel="stylesheet" href="/styles.css"></head>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Image Prompt Studio</title><link rel="stylesheet" href="/styles.css"><style>.queueItem:has(.queueThumb){grid-template-columns:42px 10px 1fr auto;cursor:pointer}.queueThumb{width:42px;height:42px;object-fit:cover;border-radius:4px;background:#eef2ee}</style></head>
 <body><main class="shell"><header><div><p class="eyebrow">LOCAL IMAGE WORKBENCH</p><h1>提示词工作台</h1><p class="sub">用 GPT-5.6 Sol 整理想法，再交给 GPT Image 2.5 生成。</p></div><span class="status"><i></i>本地运行</span></header>
 <section class="workspace"><aside class="panel controls"><div class="step"><span>01</span><div><h2>输入与润色</h2><p>把想法写下来，参考图可选。</p></div></div>
 <label>润色 API Key <input id="refineKey" type="password" placeholder="已配置，可留空" autocomplete="off"></label>
