@@ -17,6 +17,20 @@ const json = async (response) => {
   return body;
 };
 
+function isMpo(image) {
+  const name = String(image.filename || '').toLowerCase();
+  return name.endsWith('.mpo') || String(image.mimetype || '').toLowerCase() === 'image/mpo'
+    || image.buffer.subarray(0, Math.min(image.buffer.length, 128 * 1024)).includes(Buffer.from('MPF\0'));
+}
+
+function extractFirstJpeg(buffer) {
+  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
+  for (let i = 2; i < buffer.length - 1; i += 1) {
+    if (buffer[i] === 0xff && buffer[i + 1] === 0xd9) return buffer.subarray(0, i + 2);
+  }
+  return null;
+}
+
 app.get('/api/health', async () => ({ ok: true }));
 
 app.post('/api/refine', async (request, reply) => {
@@ -41,6 +55,11 @@ app.post('/api/generate', async (request, reply) => {
   for await (const part of parts) {
     if (part.type === 'file') image = { buffer: await part.toBuffer(), filename: part.filename, mimetype: part.mimetype };
     else fields[part.fieldname] = part.value;
+  }
+  if (image && isMpo(image)) {
+    const firstFrame = extractFirstJpeg(image.buffer);
+    if (!firstFrame) return reply.code(400).send({ error: 'MPO 参考图无法读取，请先导出为单张 JPG 或 PNG。' });
+    image = { ...image, buffer: firstFrame, filename: 'reference.jpg', mimetype: 'image/jpeg' };
   }
   if (image) {
     const filename = String(image.filename || '').toLowerCase();
