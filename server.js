@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: true });
-await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
+await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024, files: 3 } });
 await app.register(fastifyStatic, { root, prefix: '/' });
 
 const json = async (response) => {
@@ -72,12 +72,14 @@ app.post('/api/refine', async (request, reply) => {
 
 app.post('/api/generate', async (request, reply) => {
   const parts = request.parts();
-  const fields = {}; let image;
+  const fields = {}; const images = [];
   for await (const part of parts) {
-    if (part.type === 'file') image = { buffer: await part.toBuffer(), filename: part.filename, mimetype: part.mimetype };
+    if (part.type === 'file') images.push({ buffer: await part.toBuffer(), filename: part.filename, mimetype: part.mimetype });
     else fields[part.fieldname] = part.value;
   }
-  if (image) {
+  if (images.length > 3) return reply.code(400).send({ error: '最多支持 3 张参考图。' });
+  for (let index = 0; index < images.length; index += 1) {
+    let image = images[index];
     const filename = String(image.filename || '').toLowerCase();
     const supported = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/mpo'].includes(String(image.mimetype || '').toLowerCase())
       || /\.(png|jpe?g|webp|mpo)$/.test(filename);
@@ -86,16 +88,16 @@ app.post('/api/generate', async (request, reply) => {
       let source = image.buffer;
       try {
         const compressed = await compressReference(source);
-        image = { ...image, buffer: compressed, filename: 'reference.jpg', mimetype: 'image/jpeg' };
+        images[index] = { ...image, buffer: compressed, filename: `reference-${index + 1}.jpg`, mimetype: 'image/jpeg' };
       } catch (directError) {
         const firstFrame = extractFirstJpeg(source);
         if (!firstFrame) throw directError;
         const compressed = await compressReference(firstFrame);
-        image = { ...image, buffer: compressed, filename: 'reference.jpg', mimetype: 'image/jpeg' };
+        images[index] = { ...image, buffer: compressed, filename: `reference-${index + 1}.jpg`, mimetype: 'image/jpeg' };
       }
     } catch (error) {
       request.log.warn({ err: error }, 'Reference image conversion failed');
-      return reply.code(400).send({ error: isMpo(image) ? 'MPO 参考图无法读取，请换一张普通单帧 JPG 或 PNG。' : '参考图无法读取，请重新导出为普通 JPG 或 PNG 后再上传。' });
+      return reply.code(400).send({ error: isMpo(image) ? `第 ${index + 1} 张 MPO 参考图无法读取，请换一张普通单帧 JPG 或 PNG。` : `第 ${index + 1} 张参考图无法读取，请重新导出为普通 JPG 或 PNG 后再上传。` });
     }
   }
   const apiKey = String(fields.apiKey || process.env.IMAGE_API_KEY || '').trim();
@@ -104,9 +106,9 @@ app.post('/api/generate', async (request, reply) => {
   if (!apiKey || !prompt) return reply.code(400).send({ error: '请填写生图 API Key 和提示词' });
   const form = new FormData();
   form.append('model', model); form.append('prompt', prompt); form.append('n', '1'); form.append('size', String(fields.size || '1024x1024'));
-  if (image) form.append('image', new Blob([image.buffer], { type: image.mimetype }), image.filename || 'reference.png');
+  for (const image of images) form.append('image[]', new Blob([image.buffer], { type: image.mimetype }), image.filename);
   const imageApiBase = process.env.IMAGE_API_BASE_URL || 'https://api.duolapi.cn';
-  const endpoint = image ? `${imageApiBase}/v1/images/edits` : `${imageApiBase}/v1/images/generations`;
+  const endpoint = images.length ? `${imageApiBase}/v1/images/edits` : `${imageApiBase}/v1/images/generations`;
   let data;
   try {
     const response = await fetch(endpoint, {
@@ -114,7 +116,7 @@ app.post('/api/generate', async (request, reply) => {
       headers: image
         ? { Authorization: `Bearer ${apiKey}` }
         : { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: image ? form : JSON.stringify({ model, prompt, n: 1, size: String(fields.size || '1024x1024') })
+      body: images.length ? form : JSON.stringify({ model, prompt, n: 1, size: String(fields.size || '1024x1024') })
     });
     data = await json(response);
   } catch (error) {
@@ -126,7 +128,7 @@ app.post('/api/generate', async (request, reply) => {
   }
   const item = data?.data?.[0];
   if (!item?.url && !item?.b64_json) return reply.code(502).send({ error: '生图接口没有返回图片' });
-  return { ...item, endpoint: image ? 'edits' : 'generations' };
+  return { ...item, endpoint: images.length ? 'edits' : 'generations' };
 });
 
 app.get('/', async (_, reply) => reply.sendFile('index.html'));
