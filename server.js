@@ -57,22 +57,25 @@ app.post('/api/generate', async (request, reply) => {
     if (part.type === 'file') image = { buffer: await part.toBuffer(), filename: part.filename, mimetype: part.mimetype };
     else fields[part.fieldname] = part.value;
   }
-  if (image && isMpo(image)) {
-    const firstFrame = extractFirstJpeg(image.buffer);
-    if (!firstFrame) return reply.code(400).send({ error: 'MPO 参考图无法读取，请先导出为单张 JPG 或 PNG。' });
-    image = { ...image, buffer: firstFrame, filename: 'reference.jpg', mimetype: 'image/jpeg' };
-  }
   if (image) {
     const filename = String(image.filename || '').toLowerCase();
-    const supported = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(String(image.mimetype || '').toLowerCase())
-      && /\.(png|jpe?g|webp)$/.test(filename);
+    const supported = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/mpo'].includes(String(image.mimetype || '').toLowerCase())
+      || /\.(png|jpe?g|webp|mpo)$/.test(filename);
     if (!supported) return reply.code(400).send({ error: '参考图格式不支持。请将 MPO、HEIC 或 Live Photo 导出为单张 PNG、JPG 或 WebP 后再上传。' });
     try {
-      const normalized = await sharp(image.buffer, { page: 0 }).png().toBuffer();
-      image = { ...image, buffer: normalized, filename: 'reference.png', mimetype: 'image/png' };
+      let source = image.buffer;
+      try {
+        const normalized = await sharp(source, { page: 0 }).png().toBuffer();
+        image = { ...image, buffer: normalized, filename: 'reference.png', mimetype: 'image/png' };
+      } catch (directError) {
+        const firstFrame = extractFirstJpeg(source);
+        if (!firstFrame) throw directError;
+        const normalized = await sharp(firstFrame).png().toBuffer();
+        image = { ...image, buffer: normalized, filename: 'reference.png', mimetype: 'image/png' };
+      }
     } catch (error) {
       request.log.warn({ err: error }, 'Reference image conversion failed');
-      return reply.code(400).send({ error: '参考图无法读取，请重新导出为普通 JPG 或 PNG 后再上传。' });
+      return reply.code(400).send({ error: isMpo(image) ? 'MPO 参考图无法读取，请换一张普通单帧 JPG 或 PNG。' : '参考图无法读取，请重新导出为普通 JPG 或 PNG 后再上传。' });
     }
   }
   const apiKey = String(fields.apiKey || process.env.IMAGE_API_KEY || '').trim();
