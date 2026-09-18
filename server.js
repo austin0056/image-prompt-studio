@@ -44,7 +44,7 @@ app.post('/api/generate', async (request, reply) => {
   }
   const apiKey = String(fields.apiKey || process.env.IMAGE_API_KEY || '').trim();
   const prompt = String(fields.prompt || '').trim();
-  const model = String(fields.model || process.env.IMAGE_MODEL || 'gpt-image-2.5-sunburst');
+  const model = 'gpt-image-2.5-sunburst';
   if (!apiKey || !prompt) return reply.code(400).send({ error: '请填写生图 API Key 和提示词' });
   const form = new FormData();
   form.append('model', model); form.append('prompt', prompt); form.append('n', '1'); form.append('size', String(fields.size || '1024x1024'));
@@ -53,12 +53,18 @@ app.post('/api/generate', async (request, reply) => {
   const endpoint = image ? `${imageApiBase}/v1/images/edits` : `${imageApiBase}/v1/images/generations`;
   let data;
   try {
-    const response = await fetch(endpoint, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form });
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: image
+        ? { Authorization: `Bearer ${apiKey}` }
+        : { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: image ? form : JSON.stringify({ model, prompt, n: 1, size: String(fields.size || '1024x1024') })
+    });
     data = await json(response);
   } catch (error) {
     request.log.warn({ err: error }, 'Image provider request failed');
     const message = error.message.includes('No available channel for model')
-      ? '当前 API 分组没有可用的图片生成通道，请在 api.duolapi.cn 切换到包含 gpt-image-2.5 的分组后重试。'
+      ? '当前 API 分组没有可用的 gpt-image-2.5-sunburst 图片生成通道，请检查 API 分组配置后重试。'
       : `生图服务暂时不可用：${error.message}`;
     return reply.code(502).send({ error: message });
   }
