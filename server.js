@@ -57,7 +57,10 @@ app.post('/api/generate', async (request, reply) => {
     data = await json(response);
   } catch (error) {
     request.log.warn({ err: error }, 'Image provider request failed');
-    return reply.code(502).send({ error: `生图服务暂时不可用：${error.message}` });
+    const message = error.message.includes('No available channel for model')
+      ? '当前 API 分组没有可用的图片生成通道，请在 api.duolapi.cn 切换到包含 gpt-image-2.5 的分组后重试。'
+      : `生图服务暂时不可用：${error.message}`;
+    return reply.code(502).send({ error: message });
   }
   const item = data?.data?.[0];
   if (!item?.url && !item?.b64_json) return reply.code(502).send({ error: '生图接口没有返回图片' });
