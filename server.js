@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import sharp from 'sharp';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -66,6 +67,13 @@ app.post('/api/generate', async (request, reply) => {
     const supported = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(String(image.mimetype || '').toLowerCase())
       && /\.(png|jpe?g|webp)$/.test(filename);
     if (!supported) return reply.code(400).send({ error: '参考图格式不支持。请将 MPO、HEIC 或 Live Photo 导出为单张 PNG、JPG 或 WebP 后再上传。' });
+    try {
+      const normalized = await sharp(image.buffer, { page: 0 }).png().toBuffer();
+      image = { ...image, buffer: normalized, filename: 'reference.png', mimetype: 'image/png' };
+    } catch (error) {
+      request.log.warn({ err: error }, 'Reference image conversion failed');
+      return reply.code(400).send({ error: '参考图无法读取，请重新导出为普通 JPG 或 PNG 后再上传。' });
+    }
   }
   const apiKey = String(fields.apiKey || process.env.IMAGE_API_KEY || '').trim();
   const prompt = String(fields.prompt || '').trim();
