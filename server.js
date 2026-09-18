@@ -42,6 +42,12 @@ app.post('/api/generate', async (request, reply) => {
     if (part.type === 'file') image = { buffer: await part.toBuffer(), filename: part.filename, mimetype: part.mimetype };
     else fields[part.fieldname] = part.value;
   }
+  if (image) {
+    const filename = String(image.filename || '').toLowerCase();
+    const supported = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(String(image.mimetype || '').toLowerCase())
+      && /\.(png|jpe?g|webp)$/.test(filename);
+    if (!supported) return reply.code(400).send({ error: '参考图格式不支持。请将 MPO、HEIC 或 Live Photo 导出为单张 PNG、JPG 或 WebP 后再上传。' });
+  }
   const apiKey = String(fields.apiKey || process.env.IMAGE_API_KEY || '').trim();
   const prompt = String(fields.prompt || '').trim();
   const model = 'gpt-image-2.5-sunburst';
