@@ -21,13 +21,13 @@ app.get('/api/health', async () => ({ ok: true }));
 
 app.post('/api/refine', async (request, reply) => {
   const body = request.body || {};
-  const apiKey = String(body.apiKey || '').trim();
+  const apiKey = String(body.apiKey || process.env.REFINE_API_KEY || '').trim();
   const prompt = String(body.prompt || '').trim();
   if (!apiKey || !prompt) return reply.code(400).send({ error: '请填写润色 API Key 和原始提示词' });
   const instruction = `You are an expert image prompt editor. Rewrite the user's prompt into a precise, vivid prompt for an image generation model. Preserve the user's intent. Add useful details about subject, composition, lighting, camera, materials, style, color, and constraints only when they help. Do not explain your changes. Return only the final prompt, in the same language as the user when practical.\n\nUser prompt:\n${prompt}`;
   const response = await fetch('https://sub1.happycoding.online/v1/chat/completions', {
     method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'gpt-5.6-sol', messages: [{ role: 'user', content: instruction }], temperature: 0.7 })
+    body: JSON.stringify({ model: process.env.REFINE_MODEL || 'gpt-5.6-sol', messages: [{ role: 'user', content: instruction }], temperature: 0.7 })
   });
   const data = await json(response);
   const refined = data?.choices?.[0]?.message?.content?.trim() || '';
@@ -42,9 +42,9 @@ app.post('/api/generate', async (request, reply) => {
     if (part.type === 'file') image = { buffer: await part.toBuffer(), filename: part.filename, mimetype: part.mimetype };
     else fields[part.fieldname] = part.value;
   }
-  const apiKey = String(fields.apiKey || '').trim();
+  const apiKey = String(fields.apiKey || process.env.IMAGE_API_KEY || '').trim();
   const prompt = String(fields.prompt || '').trim();
-  const model = String(fields.model || 'gpt-image-2.5-sunburst');
+  const model = String(fields.model || process.env.IMAGE_MODEL || 'gpt-image-2.5-sunburst');
   if (!apiKey || !prompt) return reply.code(400).send({ error: '请填写生图 API Key 和提示词' });
   const form = new FormData();
   form.append('model', model); form.append('prompt', prompt); form.append('n', '1'); form.append('size', String(fields.size || '1024x1024'));
