@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const app = Fastify({ logger: true });
-await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 await app.register(fastifyStatic, { root, prefix: '/' });
 
 const json = async (response) => {
@@ -30,6 +30,26 @@ function extractFirstJpeg(buffer) {
     if (buffer[i] === 0xff && buffer[i + 1] === 0xd9) return buffer.subarray(0, i + 2);
   }
   return null;
+}
+
+const referenceMaxBytes = 4 * 1024 * 1024;
+const referenceMaxDimensions = [2048, 1600, 1280, 1024];
+const referenceQualities = [82, 72, 62, 52];
+
+async function compressReference(source) {
+  let best;
+  for (const maxDimension of referenceMaxDimensions) {
+    for (const quality of referenceQualities) {
+      const output = await sharp(source, { page: 0 })
+        .rotate()
+        .resize({ width: maxDimension, height: maxDimension, fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality, mozjpeg: true })
+        .toBuffer();
+      best = output;
+      if (output.length <= referenceMaxBytes) return output;
+    }
+  }
+  return best;
 }
 
 app.get('/api/health', async () => ({ ok: true }));
@@ -65,13 +85,13 @@ app.post('/api/generate', async (request, reply) => {
     try {
       let source = image.buffer;
       try {
-        const normalized = await sharp(source, { page: 0 }).png().toBuffer();
-        image = { ...image, buffer: normalized, filename: 'reference.png', mimetype: 'image/png' };
+        const compressed = await compressReference(source);
+        image = { ...image, buffer: compressed, filename: 'reference.jpg', mimetype: 'image/jpeg' };
       } catch (directError) {
         const firstFrame = extractFirstJpeg(source);
         if (!firstFrame) throw directError;
-        const normalized = await sharp(firstFrame).png().toBuffer();
-        image = { ...image, buffer: normalized, filename: 'reference.png', mimetype: 'image/png' };
+        const compressed = await compressReference(firstFrame);
+        image = { ...image, buffer: compressed, filename: 'reference.jpg', mimetype: 'image/jpeg' };
       }
     } catch (error) {
       request.log.warn({ err: error }, 'Reference image conversion failed');
