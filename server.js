@@ -49,9 +49,16 @@ app.post('/api/generate', async (request, reply) => {
   const form = new FormData();
   form.append('model', model); form.append('prompt', prompt); form.append('n', '1'); form.append('size', String(fields.size || '1024x1024'));
   if (image) form.append('image', new Blob([image.buffer], { type: image.mimetype }), image.filename || 'reference.png');
-  const endpoint = image ? 'https://api.duolapi.cn/v1/images/edits' : 'https://api.duolapi.cn/v1/images/generations';
-  const response = await fetch(endpoint, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form });
-  const data = await json(response);
+  const imageApiBase = process.env.IMAGE_API_BASE_URL || 'https://api.duolapi.cn';
+  const endpoint = image ? `${imageApiBase}/v1/images/edits` : `${imageApiBase}/v1/images/generations`;
+  let data;
+  try {
+    const response = await fetch(endpoint, { method: 'POST', headers: { Authorization: `Bearer ${apiKey}` }, body: form });
+    data = await json(response);
+  } catch (error) {
+    request.log.warn({ err: error }, 'Image provider request failed');
+    return reply.code(502).send({ error: `生图服务暂时不可用：${error.message}` });
+  }
   const item = data?.data?.[0];
   if (!item?.url && !item?.b64_json) return reply.code(502).send({ error: '生图接口没有返回图片' });
   return { ...item, endpoint: image ? 'edits' : 'generations' };
