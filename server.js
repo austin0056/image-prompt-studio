@@ -120,7 +120,7 @@ app.post('/api/generate', async (request, reply) => {
   const model = 'gpt-image-2.5-sunburst';
   if (!apiKey || !prompt) return reply.code(400).send({ error: '请填写生图 API Key 和提示词' });
   const form = new FormData();
-  form.append('model', model); form.append('prompt', prompt); form.append('n', '1'); form.append('size', String(fields.size || '1024x1024'));
+  form.append('model', model); form.append('prompt', prompt); form.append('n', '1'); form.append('quality', 'max'); form.append('size', String(fields.size || '1024x1024'));
   for (const image of images) form.append('image[]', new Blob([image.buffer], { type: image.mimetype }), image.filename);
   const imageApiBase = process.env.IMAGE_API_BASE_URL || 'https://api.duolapi.cn';
   const endpoint = images.length ? `${imageApiBase}/v1/images/edits` : `${imageApiBase}/v1/images/generations`;
@@ -131,7 +131,7 @@ app.post('/api/generate', async (request, reply) => {
       headers: images.length
         ? { Authorization: `Bearer ${apiKey}` }
         : { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: images.length ? form : JSON.stringify({ model, prompt, n: 1, size: String(fields.size || '1024x1024') })
+      body: images.length ? form : JSON.stringify({ model, prompt, n: 1, quality: 'max', size: String(fields.size || '1024x1024') })
     });
     data = await json(response);
   } catch (error) {
