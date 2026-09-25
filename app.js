@@ -51,8 +51,9 @@ function renderReferencePreviews() {
   preview.replaceChildren();
   selectedReferences.forEach((files, index) => {
     const item = document.createElement('article');
-    item.className = 'referencePreviewItem';
+    item.className = `referencePreviewItem${files.length ? ' is-filled' : ' is-empty'}${index === 0 ? ' is-required' : ''}`;
     item.dataset.slot = String(index);
+    item.dataset.count = String(files.length);
     item.addEventListener('dragover', (event) => { event.preventDefault(); item.classList.add('dragging'); });
     item.addEventListener('dragleave', () => item.classList.remove('dragging'));
     item.addEventListener('drop', (event) => {
@@ -60,7 +61,7 @@ function renderReferencePreviews() {
     });
     const heading = document.createElement('div');
     heading.className = 'referencePreviewHeading';
-    heading.innerHTML = `<span class="referenceIndex">0${index + 1}</span><span><strong>${referenceRoles[index]}</strong><small>${index === 0 ? '至少上传 1 张' : '可选，可上传多张'}</small></span>`;
+    heading.innerHTML = `<span class="referenceIndex">0${index + 1}</span><span class="referenceHeadingCopy"><strong>${referenceRoles[index]}</strong><small>${index === 0 ? '至少上传 1 张产品图' : '可选，按语义单独上传'}</small></span><span class="referenceSlotCount">${files.length} / ${maxReferencesPerRole}</span>`;
     item.append(heading);
     const description = document.createElement('p');
     description.className = 'referenceDescription';
@@ -82,7 +83,11 @@ function renderReferencePreviews() {
       imageWrap.append(image, remove); media.append(imageWrap);
     });
     const add = document.createElement('button');
-    add.type = 'button'; add.className = 'referenceEmpty referenceAdd'; add.innerHTML = '<span class="uploadGlyph">＋</span><span>添加参考图</span>';
+    add.type = 'button'; add.className = 'referenceEmpty referenceAdd';
+    const atLimit = files.length >= maxReferencesPerRole;
+    add.disabled = atLimit;
+    add.classList.toggle('is-limit', atLimit);
+    add.innerHTML = `<span class="uploadGlyph">${atLimit ? '✓' : '＋'}</span><span class="referenceAddCopy"><strong>${atLimit ? '已达上传上限' : files.length ? '继续添加' : '拖放或选择图片'}</strong><small>${atLimit ? '最多 5 张参考图' : `最多 ${maxReferencesPerRole} 张 · JPG / PNG / WebP / MPO`}</small></span>`;
     add.addEventListener('click', () => input.click());
     media.append(add);
     item.append(media);
