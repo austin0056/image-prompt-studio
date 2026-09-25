@@ -1,14 +1,196 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Image Prompt Studio</title><link rel="stylesheet" href="/styles.css"></head>
-<body><main class="shell"><header><div><p class="eyebrow">LOCAL IMAGE WORKBENCH</p><h1>提示词工作台</h1><p class="sub">用 GPT-5.6 Sol 整理想法，再交给 GPT Image 2.5 生成。</p></div><span class="status"><i></i>本地运行</span></header>
-<section class="workspace"><aside class="panel controls"><div class="step"><span>01</span><div><h2>输入与润色</h2><p>把想法写下来，参考图可选。</p></div></div>
-<label>润色 API Key <input id="refineKey" type="password" placeholder="已配置，可留空" autocomplete="off"></label>
-<label>生图 API Key <input id="imageKey" type="password" placeholder="已配置，可留空" autocomplete="off"></label>
-<label>原始提示词 <textarea id="prompt" rows="5" placeholder="例如：一只戴宇航员头盔的橘猫贴纸"></textarea></label>
-<label class="upload">参考图 <input id="reference" type="file" accept="image/png,image/jpeg,image/webp,image/mpo,.mpo"><span id="fileName">未选择文件</span></label>
-<div class="row"><label>模型<select id="model"><option value="gpt-image-2.5-sunburst">gpt-image-2.5-sunburst</option></select></label><label>比例与清晰度<select id="size"><option value="1024x1024">1:1 正方形（1K · 1024 × 1024）</option><option value="1536x1024">3:2 横向（1K · 1536 × 1024）</option><option value="1024x1536">2:3 纵向（1K · 1024 × 1536）</option><option value="2048x2048">1:1 正方形（2K · 2048 × 2048）</option><option value="4096x4096">1:1 正方形（4K · 4096 × 4096）</option></select></label></div>
-<label>生成数量<select id="quantity"><option value="1">1 张</option><option value="2">2 张</option><option value="4">4 张</option></select></label>
-<div class="actions"><button id="refine" class="secondary">✦ 润色提示词</button><button id="generate" class="primary">生成图片 <span>→</span></button></div><p id="message" class="message"></p></aside>
-<section class="panel result"><div class="step"><span>02</span><div><h2>生成队列</h2><p id="queueSummary">0 个任务</p></div><button id="clearQueue" class="queueClear" type="button">清空已完成</button></div><div id="queueList" class="queueList"><p class="queueEmpty">暂无任务</p></div></section></section>
-<div id="previewModal" class="previewModal hidden" role="dialog" aria-modal="true" aria-label="图片预览"><div class="previewDialog"><button id="closePreview" class="previewClose" type="button" aria-label="关闭预览">×</button><img id="previewImage" alt="生成图片预览"><div class="previewFooter"><span id="previewPrompt"></span><a id="previewDownload" class="download" download="generated-image.png">下载图片 ↓</a></div></div></div>
-<footer>API 请求通过本机代理发送，密钥不会写入文件。</footer></main><script src="/app.js"></script></body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8fb">
+  <title>Image Prompt Studio</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brandLockup">
+        <div class="brandMark" aria-hidden="true">IP</div>
+        <div>
+          <p class="eyebrow">IMAGE PROMPT STUDIO</p>
+          <h1>提示词工作台</h1>
+        </div>
+      </div>
+      <div class="sessionStatus" aria-label="服务状态">
+        <span class="statusDot" aria-hidden="true"></span>
+        <span>服务在线</span>
+        <span class="statusDivider" aria-hidden="true"></span>
+        <span class="statusModel">Image 2.5</span>
+      </div>
+    </header>
+
+    <div class="workspaceIntro">
+      <div>
+        <p class="kicker">CREATE / ITERATE / EXPORT</p>
+        <h2>把想法变成可控的画面</h2>
+        <p class="introCopy">先整理描述，再用三类参考图锁定产品、动作与氛围。多个任务可以同时生成。</p>
+      </div>
+      <div class="introMeta" aria-label="生成能力">
+        <span><strong>3</strong> 参考槽位</span>
+        <span><strong>4K</strong> 输出上限</span>
+        <span><strong>Max</strong> 质量</span>
+      </div>
+    </div>
+
+    <section class="workspace" aria-label="图像生成工作台">
+      <section class="panel composerPanel" aria-labelledby="composerTitle">
+        <div class="panelHeading">
+          <div class="headingIndex">01</div>
+          <div>
+            <p class="panelEyebrow">PROMPT COMPOSER</p>
+            <h2 id="composerTitle">输入与润色</h2>
+          </div>
+          <span class="panelState">草稿</span>
+        </div>
+
+        <div class="fieldBlock promptBlock">
+          <div class="fieldHeader">
+            <label for="prompt">原始提示词</label>
+            <span class="fieldHint" id="promptCount">0 字</span>
+          </div>
+          <textarea id="prompt" rows="6" maxlength="4000" placeholder="描述你想看到的画面、主体、材质、镜头和情绪……" spellcheck="false"></textarea>
+          <div class="fieldFooter">
+            <span>提示词会在发送前由服务端润色</span>
+            <span class="secureLabel"><span aria-hidden="true">●</span> 密钥由服务端管理</span>
+          </div>
+        </div>
+
+        <button id="refine" class="button buttonSecondary buttonWide" type="button">
+          <span class="buttonIcon" aria-hidden="true">✦</span>
+          <span>润色提示词</span>
+          <span class="buttonArrow" aria-hidden="true">↗</span>
+        </button>
+
+        <div class="sectionRule"></div>
+
+        <div class="referenceHeading">
+          <div>
+            <div class="fieldHeader"><span class="fieldLabel">参考图</span><span class="requiredTag">产品细节必填</span></div>
+            <p>每个模块可上传最多 5 张。拖入对应模块，避免产品、动作与氛围语义混用。支持 JPG、PNG、WebP、MPO。</p>
+          </div>
+          <span class="slotCount" id="fileName">0 / 15</span>
+        </div>
+
+        <div id="referencePreviewWrap" class="referencePreviewWrap">
+          <div id="referencePreview" class="referencePreview" aria-label="三类参考图槽位"></div>
+        </div>
+
+        <div class="sectionRule compactRule"></div>
+
+        <div class="settingsGrid">
+          <label class="controlField" for="model">
+            <span>模型</span>
+            <select id="model">
+              <option value="gpt-image-2.5-sunburst">gpt-image-2.5-sunburst</option>
+            </select>
+          </label>
+          <label class="controlField" for="size">
+            <span>比例与尺寸</span>
+            <select id="size">
+              <option value="1024x1024">1:1 · 1K · 1024 × 1024</option>
+              <option value="1536x1024">3:2 · 1K · 1536 × 1024</option>
+              <option value="1024x1536">2:3 · 1K · 1024 × 1536</option>
+              <option value="2048x2048">1:1 · 2K · 2048 × 2048</option>
+              <option value="4096x4096">1:1 · 4K · 4096 × 4096</option>
+            </select>
+          </label>
+          <label class="controlField" for="quality">
+            <span>质量</span>
+            <select id="quality">
+              <option value="max">Max · 最高细节</option>
+            </select>
+          </label>
+          <label class="controlField" for="visualStyle">
+            <span>画面表现</span>
+            <select id="visualStyle">
+              <option value="photography">摄影还原 · 真实拍摄</option>
+              <option value="render">3D 渲染 · 高级质感</option>
+            </select>
+          </label>
+          <label class="controlField" for="renderMaterial">
+            <span>材质策略</span>
+            <select id="renderMaterial">
+              <option value="auto">自动匹配画面表现</option>
+              <option value="preserve">保留参考材质</option>
+              <option value="premium">重建细腻材质</option>
+            </select>
+          </label>
+          <label class="controlField" for="quantity">
+            <span>生成数量</span>
+            <select id="quantity">
+              <option value="1">1 张</option>
+              <option value="2">2 张</option>
+              <option value="4">4 张</option>
+              <option value="8">8 张</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="composerActions">
+          <button id="generate" class="button buttonPrimary" type="button">
+            <span>生成图片</span>
+            <span class="buttonArrow" aria-hidden="true">→</span>
+          </button>
+          <span class="generationNote"><span class="statusDot small" aria-hidden="true"></span> 可并行处理</span>
+        </div>
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel queuePanel" aria-labelledby="queueTitle">
+        <div class="panelHeading queueHeading">
+          <div class="headingIndex headingIndexAccent">02</div>
+          <div>
+            <p class="panelEyebrow">GENERATION QUEUE</p>
+            <h2 id="queueTitle">生成队列</h2>
+          </div>
+          <button id="clearQueue" class="iconButton" type="button" title="清空已完成任务" aria-label="清空已完成任务">⌫</button>
+        </div>
+        <div class="queueToolbar">
+          <p id="queueSummary" class="queueSummary">0 个任务</p>
+          <div class="queueLegend" aria-label="任务状态">
+            <span><i class="legendDot legendRunning"></i>进行中</span>
+            <span><i class="legendDot legendDone"></i>已完成</span>
+          </div>
+        </div>
+        <div id="queueList" class="queueList">
+          <div class="queueEmpty">
+            <div class="emptyGlyph" aria-hidden="true">＋</div>
+            <h3>还没有生成任务</h3>
+            <p>完成左侧描述后，任务会出现在这里。</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footerBar">
+      <span>Image Prompt Studio</span>
+      <span>请求通过本机代理发送 · 历史记录保存在当前浏览器</span>
+    </footer>
+  </main>
+
+  <div id="previewModal" class="previewModal hidden" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+    <div class="previewDialog">
+      <div class="previewDialogHeader">
+        <div>
+          <p class="panelEyebrow">OUTPUT PREVIEW</p>
+          <h2 id="previewTitle">生成结果</h2>
+        </div>
+        <button id="closePreview" class="iconButton previewClose" type="button" title="关闭预览" aria-label="关闭预览">×</button>
+      </div>
+      <img id="previewImage" alt="生成图片预览">
+      <div class="previewFooter">
+        <p id="previewPrompt"></p>
+        <a id="previewDownload" class="button buttonSecondary download" download="generated-image.png">下载图片 <span aria-hidden="true">↓</span></a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
