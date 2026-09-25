@@ -366,6 +366,67 @@ textarea:focus, input:focus, select:focus { border-color: #7a9bb6; background: #
 .referencePreviewItem.is-empty .referenceMediaGrid { grid-template-columns: minmax(0, 1fr); }
 .referencePreviewItem.is-empty .referenceAdd { aspect-ratio: auto; min-height: 66px; justify-content: flex-start; padding: 10px 12px; text-align: left; }
 .referencePreviewItem.is-empty .referenceAddCopy small { font-size: 9px; }
+.referencePreviewItem {
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.referencePreviewItem:hover { transform: translateY(-1px); box-shadow: 0 8px 20px #21394b10; }
+.referencePreviewItem.is-empty .referenceMediaGrid {
+  min-height: 104px;
+  border-style: dashed;
+  background: #fbfdff;
+}
+.referencePreviewItem.is-empty .referenceAdd {
+  min-height: 82px;
+  border-width: 1.5px;
+  border-color: #b5c9d8;
+  background: linear-gradient(135deg, #fbfdff, #f4f8fb);
+}
+.referencePreviewItem.is-empty .referenceAdd:hover {
+  border-color: #5f9a7a;
+  background: #eff9f3;
+  box-shadow: inset 0 0 0 1px #5f9a7a33;
+}
+.referencePreviewItem.is-filled .referenceMediaGrid {
+  border-style: solid;
+  border-color: #dce6ed;
+  background: #f7fafc;
+}
+.referencePreviewItem.is-filled .referenceAdd {
+  border-style: dashed;
+  background: #fff;
+}
+.referencePreviewItem.is-filled .referenceAdd:hover { transform: translateY(-1px); }
+.referencePreviewItem.is-missing .referenceMediaGrid {
+  border-color: #dbb568;
+  background: #fffaf1;
+}
+.referencePreviewItem.dragging {
+  transform: scale(1.01);
+  border-color: #4d956f;
+  background: #f0faf4;
+  box-shadow: 0 0 0 4px #4d956f24, 0 12px 26px #35694d18;
+}
+.referencePreviewItem.dragging .referenceDescription::after {
+  content: '松开即可添加到此模块';
+  display: block;
+  margin-top: 4px;
+  color: #397456;
+  font-weight: 750;
+}
+.referenceThumb {
+  min-width: 0;
+  aspect-ratio: 1;
+}
+.referenceThumb img {
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.referenceRemove:focus-visible,
+.referenceAdd:focus-visible {
+  outline: 3px solid #5d9b7b55;
+  outline-offset: 2px;
+}
+.referenceAdd:disabled { transform: none; }
 
 @media (max-width: 600px) {
   .referenceHeading { align-items: flex-start; flex-direction: column; gap: 8px; }
@@ -377,4 +438,44 @@ textarea:focus, input:focus, select:focus { border-color: #7a9bb6; background: #
   .referencePreviewItem.is-empty .referenceMediaGrid { grid-template-columns: minmax(0, 1fr); }
   .referenceDescription { margin: 8px 10px 0; }
   .referenceAddCopy small { font-size: 8px; }
+  .referencePreviewItem.is-empty .referenceAdd { min-height: 76px; }
+  .referencePreviewHeading { min-height: 56px; }
+  .referenceRemove { width: 24px; height: 24px; }
+}
+
+/* Final uploader pass: semantic cards stay independent and readable at every size. */
+.referencePreview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.referencePreviewItem { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border-radius: 12px; background: #fff; }
+.referencePreviewItem.dragging { border-color: #37845d; background: #f2faf5; box-shadow: 0 0 0 4px #37845d1c, 0 10px 28px #37845d18; transform: translateY(-1px); }
+.referencePreviewHeading { min-height: 64px; padding: 12px 13px 10px; }
+.referenceHeadingCopy small { line-height: 1.35; }
+.referenceRequired { flex: 0 0 auto; padding: 3px 6px; border: 1px solid #d5e0e7; border-radius: 999px; color: #71818c; background: #f7f9fa; font-size: 9px; font-weight: 700; }
+.referenceRequired.is-required { border-color: #ecd39f; color: #946a22; background: #fff8e9; }
+.referenceDescription { min-height: 31px; }
+.referenceMediaGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 12px 12px; padding: 9px; border: 1px dashed #c7d6df; border-radius: 9px; background: #f7fafc; }
+.referencePreviewItem.is-filled .referenceMediaGrid { border-style: solid; }
+.referencePreviewItem.dragging .referenceMediaGrid { border-color: #4b9a6e; background: #edf8f1; }
+.referenceThumb { position: relative; min-width: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid #d7e1e8; border-radius: 7px; background: #e9eef2; }
+.referenceThumb img { display: block; width: 100%; height: 100%; border-radius: 6px; object-fit: cover; }
+.referenceThumb::after { position: absolute; right: 0; bottom: 0; left: 0; height: 30%; background: linear-gradient(transparent, #07151dcc); content: ''; pointer-events: none; }
+.referenceFileName { position: absolute; z-index: 1; right: 4px; bottom: 4px; left: 4px; overflow: hidden; color: #fff; font-size: 8px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+.referenceMediaGrid .referenceRemove { z-index: 2; top: 4px; right: 4px; width: 22px; height: 22px; }
+.referenceAdd { min-height: 0; aspect-ratio: 1; border: 1px dashed #b7cbd7; border-radius: 7px; background: #fcfeff; }
+.referenceAdd:hover, .referenceAdd:focus-visible { border-color: #5d9c79; color: #2f6c50; background: #eef9f2; box-shadow: 0 0 0 3px #5d9c7920; }
+.referenceAddCopy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.referencePreviewItem.is-empty .referenceMediaGrid { min-height: 96px; }
+.referencePreviewItem.is-empty .referenceAdd { min-height: 96px; padding: 14px; }
+.referencePreviewItem.is-empty .referenceAddCopy small { white-space: normal; }
+@media (max-width: 980px) {
+  .referencePreview { grid-template-columns: 1fr; }
+  .referencePreviewItem { display: grid; grid-template-columns: minmax(170px, .45fr) minmax(0, 1fr); }
+  .referencePreviewHeading { grid-column: 1; grid-row: 1; border-right: 1px solid #e6edf2; border-bottom: 0; }
+  .referenceDescription { grid-column: 1; grid-row: 2; min-height: 0; margin-top: 0; padding: 0 13px 12px; }
+  .referenceMediaGrid { grid-column: 2; grid-row: 1 / 3; align-self: center; margin: 12px; }
+}
+@media (max-width: 560px) {
+  .referencePreviewItem { display: flex; }
+  .referencePreviewHeading { border-right: 0; border-bottom: 1px solid #e6edf2; }
+  .referenceDescription { margin: 9px 11px 0; padding: 0; }
+  .referenceMediaGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 9px 10px 10px; padding: 8px; gap: 7px; }
 }
