@@ -296,6 +296,11 @@ textarea:focus, input:focus, select:focus { border-color: #7a9bb6; background: #
   font-weight: 750;
 }
 .referencePreviewItem.is-required .referenceSlotCount { border-color: #ead7aa; color: #946a22; background: #fff8e9; }
+.referencePreviewItem.is-missing { border-color: #e3c17c; box-shadow: 0 0 0 3px #e3c17c1c; }
+.referencePreviewItem.is-missing .referencePreviewHeading { background: #fffaf0; }
+.productRequirement { margin: 9px 0 0; color: #946a22; font-size: 10px; font-weight: 700; }
+.productRequirement:empty { display: none; }
+.productRequirement[data-ready="true"] { color: #397456; }
 .referencePreviewItem.is-filled .referenceSlotCount { border-color: #c4dfcf; color: #397456; background: #eef8f1; }
 .referenceDescription {
   position: relative;

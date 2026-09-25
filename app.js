@@ -30,6 +30,24 @@ function setBusy(button, busy, label) {
   } else if (button.dataset.idleLabel) button.textContent = button.dataset.idleLabel;
 }
 function showError(error) { setMessage(error?.message || String(error), 'error'); }
+function syncProductRequirement() {
+  const ready = selectedReferences[0].length > 0;
+  const card = $('referencePreview')?.querySelector('[data-slot="0"]');
+  const generate = $('generate');
+  if (card) {
+    card.classList.toggle('is-missing', !ready);
+    card.setAttribute('aria-required', 'true');
+  }
+  if (generate) {
+    generate.dataset.productReady = ready ? 'true' : 'false';
+    generate.setAttribute('aria-describedby', 'productRequirement');
+  }
+  const hint = $('productRequirement');
+  if (hint) {
+    hint.textContent = ready ? '产品细节已添加，可生成' : '生成前必须上传至少 1 张产品细节图';
+    hint.dataset.ready = ready ? 'true' : 'false';
+  }
+}
 
 function isValidReference(file) {
   if (!file) return false;
@@ -95,6 +113,7 @@ function renderReferencePreviews() {
   });
   $('referencePreviewWrap')?.classList.remove('hidden');
   if ($('fileName')) $('fileName').textContent = `${selectedReferences.reduce((count, files) => count + files.length, 0)} / ${maxReferencesPerRole * 3}`;
+  syncProductRequirement();
 }
 
 function addReferencesToRole(index, files) {
