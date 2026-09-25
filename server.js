@@ -52,7 +52,10 @@ app.addHook('onResponse', async request => {
   request.generationRelease?.();
 });
 
-const UPSTREAM_TIMEOUT_MS = Math.max(10_000, Number(process.env.UPSTREAM_TIMEOUT_MS || 120_000));
+// Image edits, especially at 2K/4K with several references, can legitimately
+// take longer than two minutes upstream. Keep the timeout configurable while
+// giving the provider five minutes by default.
+const UPSTREAM_TIMEOUT_MS = Math.max(10_000, Number(process.env.UPSTREAM_TIMEOUT_MS || 300_000));
 const MAX_PROMPT_CHARS = Math.max(1_000, Number(process.env.MAX_PROMPT_CHARS || 20_000));
 const ALLOWED_SIZES = new Set(['1024x1024', '1536x1024', '1024x1536', '2048x2048', '4096x4096']);
 const MAX_UPSTREAM_CONCURRENCY = Math.max(1, Number(process.env.UPSTREAM_CONCURRENCY || 8));
@@ -278,7 +281,12 @@ app.post('/api/generate', async (request, reply) => {
     const message = String(error.message || '').includes('No available channel for model')
       ? '当前 API 分组没有可用的 gpt-image-2.5-sunburst 图片生成通道，请检查 API 分组配置后重试。'
       : `生图服务暂时不可用：${error.message}`;
-    return reply.code(statusCode).send({ error: message });
+    return reply.code(statusCode).send({
+      error: message,
+      ...(error.name === 'TimeoutError' || error.name === 'AbortError'
+        ? { code: 'UPSTREAM_TIMEOUT', timeoutMs: UPSTREAM_TIMEOUT_MS }
+        : {})
+    });
   }
   const item = data?.data?.[0];
   if (!item?.url && !item?.b64_json) return reply.code(502).send({ error: '生图接口没有返回图片' });
