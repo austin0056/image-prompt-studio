@@ -49,7 +49,7 @@ h1 { margin: 3px 0 0; color: var(--ink); font-size: 23px; font-weight: 760; lett
 .introMeta span { padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: #fbfcfe; }
 .introMeta strong { color: var(--ink-soft); font-size: 12px; }
 
-.workspace { display: grid; grid-template-columns: minmax(440px, 500px) minmax(0, 1fr); align-items: start; gap: 18px; }
+.workspace { display: grid; grid-template-columns: minmax(520px, 580px) minmax(0, 1fr); align-items: start; gap: 18px; }
 .panel { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: 0 12px 35px #1b2a380b; }
 .composerPanel { padding: 24px; }
 .queuePanel { min-height: 706px; padding: 24px; }
@@ -313,7 +313,7 @@ textarea:focus, input:focus, select:focus { border-color: #7a9bb6; background: #
 .referenceMediaGrid {
   position: relative;
   z-index: 1;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 10px 12px 12px;
 }
@@ -478,4 +478,98 @@ textarea:focus, input:focus, select:focus { border-color: #7a9bb6; background: #
   .referencePreviewHeading { border-right: 0; border-bottom: 1px solid #e6edf2; }
   .referenceDescription { margin: 9px 11px 0; padding: 0; }
   .referenceMediaGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 9px 10px 10px; padding: 8px; gap: 7px; }
+}
+
+/* Keep the three semantic upload modules readable in the narrow composer.
+   Each role gets its own row; thumbnails stay large enough to inspect and
+   the drop surface remains easy to target. */
+.referencePreview {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.referencePreviewItem {
+  display: grid;
+  grid-template-columns: minmax(178px, .78fr) minmax(0, 1.22fr);
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.referencePreviewItem[data-slot="0"] { border-left: 3px solid #c49442; }
+.referencePreviewItem[data-slot="1"] { border-left: 3px solid #6288a5; }
+.referencePreviewItem[data-slot="2"] { border-left: 3px solid #6e9b79; }
+.referencePreviewItem[data-slot="0"] .referenceIndex { color: #946a22; border-color: #ead7aa; background: #fff8e9; }
+.referencePreviewItem[data-slot="1"] .referenceIndex { color: #4d7290; border-color: #c7d9e7; background: #f0f6fa; }
+.referencePreviewItem[data-slot="2"] .referenceIndex { color: #397456; border-color: #c4dfcf; background: #eef8f1; }
+.referencePreviewHeading {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 64px;
+  border-right: 1px solid #e6edf2;
+  border-bottom: 0;
+}
+.referenceDescription {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 13px 13px;
+}
+.referenceMediaGrid {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px;
+  padding: 9px;
+}
+.referencePreviewItem.is-filled .referenceMediaGrid::before {
+  grid-column: 1 / -1;
+  color: #93a1aa;
+  font-size: 9px;
+  line-height: 1;
+  content: '拖入更多图片，或点击 + 继续添加';
+}
+.referencePreviewItem.is-empty .referenceMediaGrid::before { display: none; }
+.referencePreviewItem.is-empty .referenceMediaGrid {
+  min-height: 108px;
+  grid-template-columns: 1fr;
+}
+.referencePreviewItem.is-empty .referenceAdd {
+  min-height: 108px;
+  aspect-ratio: auto;
+}
+.referenceAddCopy small {
+  white-space: normal;
+}
+
+@media (max-width: 560px) {
+  .referencePreviewItem {
+    display: flex;
+  }
+  .referencePreviewHeading {
+    min-height: 58px;
+    border-right: 0;
+    border-bottom: 1px solid #e6edf2;
+  }
+  .referenceDescription {
+    margin: 8px 11px 0;
+    padding: 0;
+  }
+  .referenceMediaGrid {
+    grid-column: auto;
+    grid-row: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 9px 10px 10px;
+    padding: 8px;
+    gap: 7px;
+  }
+  .referencePreviewItem.is-empty .referenceMediaGrid {
+    grid-template-columns: 1fr;
+    min-height: 92px;
+  }
+  .referencePreviewItem.is-empty .referenceAdd {
+    min-height: 92px;
+  }
 }
